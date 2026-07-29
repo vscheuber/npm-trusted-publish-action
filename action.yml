@@ -1,0 +1,69 @@
+name: 'NPM Trusted Publish Action'
+description: 'Publish npm packages using OIDC trusted publishing with release-type aware channel selection'
+author: 'Volker Scheuber'
+
+branding:
+  icon: 'package'
+  color: 'green'
+
+inputs:
+  release-type:
+    description: 'prerelease | patch | minor | major'
+    required: false
+    default: 'prerelease'
+  package-name:
+    description: 'Package name for optional dist-tag update'
+    required: false
+    default: ''
+  version:
+    description: 'Version being published (used for optional next tag update)'
+    required: false
+    default: ''
+  package-path:
+    description: 'Path to package directory containing package.json'
+    required: false
+    default: '.'
+  access:
+    description: 'npm publish access level (public|restricted)'
+    required: false
+    default: 'public'
+  tag-override:
+    description: 'Override npm publish tag (e.g. next, latest)'
+    required: false
+    default: ''
+  add-next-tag-on-stable:
+    description: 'When true and release is stable, also add next dist-tag to this version'
+    required: false
+    default: 'true'
+  dry-run:
+    description: 'When true, print intended commands without publishing'
+    required: false
+    default: 'false'
+
+outputs:
+  published:
+    description: 'Whether publish was executed'
+    value: ${{ steps.publish.outputs.published }}
+  tag:
+    description: 'Resolved npm publish tag'
+    value: ${{ steps.publish.outputs.tag }}
+  is-prerelease:
+    description: 'Whether release-type resolved to prerelease'
+    value: ${{ steps.publish.outputs.is_prerelease }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: publish
+      shell: bash
+      env:
+        RELEASE_TYPE: ${{ inputs.release-type }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        VERSION: ${{ inputs.version }}
+        PACKAGE_PATH: ${{ inputs.package-path }}
+        ACCESS: ${{ inputs.access }}
+        TAG_OVERRIDE: ${{ inputs.tag-override }}
+        ADD_NEXT_TAG_ON_STABLE: ${{ inputs.add-next-tag-on-stable }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        bash "${{ github.action_path }}/scripts/publish.sh"

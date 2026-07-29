@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: 'Release kind: prerelease | patch | minor | major'
+        default: 'prerelease'
+        required: true
+      llm-provider:
+        description: 'LLM provider'
+        default: 'openai'
+        required: true
+      model:
+        description: 'LLM model'
+        default: 'gpt-4o'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: read
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        uses: vscheuber/version-bump-action@v1
+        with:
+          release-type: ${{ inputs.release-type }}
+
+      - name: Update changelog using AI action
+        uses: vscheuber/ai-changelog-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          llm-api-key: ${{ secrets.LLM_API_KEY }}
+          llm-provider: ${{ inputs.llm-provider }}
+          model: ${{ inputs.model }}
+          target-user-type: developer
+          release-type: ${{ steps.version.outputs.action_release_type }}
+          version: ${{ steps.version.outputs.newVersion }}
+          commit: false
+
+      - name: Promote Unreleased section and extract release notes
+        env:
+          CHANGELOG_PATH: CHANGELOG.md
+          RELEASE_TAG: ${{ steps.version.outputs.newTag }}
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = process.env.CHANGELOG_PATH || 'CHANGELOG.md';
+          const tag = process.env.RELEASE_TAG;
+          const date = new Date().toISOString().slice(0, 10);
+
+          const content = fs.readFileSync(path, 'utf8');
+          const match = content.match(/^##?\s+Unreleased\s*\n([\s\S]*?)(?=^##?\s+|(?![\s\S]))/im);
+          if (!match) throw new Error('Could not find Unreleased section');
+
+          const body = match[1].trim();
+          if (!body) throw new Error('No changelog content under Unreleased');
+
+          const heading = `## [${tag}] - ${date}`;
+          const replacement = `## Unreleased\n\n${heading}\n\n${body}\n\n`;
+          const updated = content.replace(match[0], replacement).replace(/\n{3,}/g, '\n\n');
+
+          fs.writeFileSync(path, updated, 'utf8');
+          fs.writeFileSync('RELEASE_NOTES.md', body + '\n', 'utf8');
+          NODE
+
+      - name: Commit changelog and version
+        run: |
+          set -euo pipefail
+          npm version "${{ steps.version.outputs.newVersion }}" --no-git-tag-version --allow-same-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md package.json
+          if git diff --cached --quiet; then
+            echo "No release changes to commit"
+          else
+            git commit -m "chore: release ${{ steps.version.outputs.newTag }}"
+            git push origin HEAD
+          fi
+
+      - name: Create and push tag
+        run: |
+          set -euo pipefail
+          git fetch --tags
+          tag='${{ steps.version.outputs.newTag }}'
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} already exists"
+            exit 1
+          fi
+          git tag -a "${tag}" -m "Release ${tag}"
+          git push origin "${tag}"
+
+      - name: Validate publish action behavior (dry-run)
+        uses: ./
+        with:
+          release-type: ${{ inputs.release-type }}
+          package-name: npm-trusted-publish-action
+          version: ${{ steps.version.outputs.newVersion }}
+          dry-run: true
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.version.outputs.newTag }}
+          IS_PRERELEASE: ${{ steps.version.outputs.preRelease }}
+        run: |
+          set -euo pipefail
+          args=(release create "$RELEASE_TAG" --notes-file RELEASE_NOTES.md)
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+          gh "${args[@]}"
