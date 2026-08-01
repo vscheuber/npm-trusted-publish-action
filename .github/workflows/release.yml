@@ -30,6 +30,7 @@ jobs:
           release-type: ${{ inputs.release-type }}
 
       - name: Update changelog using AI action
+        id: changelog
         uses: vscheuber/ai-changelog-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -39,31 +40,12 @@ jobs:
           version: ${{ steps.version.outputs.newVersion }}
           commit: false
 
-      - name: Promote Unreleased section and extract release notes
+      - name: Write release notes from AI action output
         env:
-          CHANGELOG_PATH: CHANGELOG.md
-          RELEASE_TAG: ${{ steps.version.outputs.newTag }}
+          RELEASE_NOTES: ${{ steps.changelog.outputs.unreleased-content }}
         run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const path = process.env.CHANGELOG_PATH || 'CHANGELOG.md';
-          const tag = process.env.RELEASE_TAG;
-          const date = new Date().toISOString().slice(0, 10);
-
-          const content = fs.readFileSync(path, 'utf8');
-          const match = content.match(/^##?\s+Unreleased\s*\n([\s\S]*?)(?=^##?\s+|(?![\s\S]))/im);
-          if (!match) throw new Error('Could not find Unreleased section');
-
-          const body = match[1].trim();
-          if (!body) throw new Error('No changelog content under Unreleased');
-
-          const heading = `## [${tag}] - ${date}`;
-          const replacement = `## Unreleased\n\n${heading}\n\n${body}\n\n`;
-          const updated = content.replace(match[0], replacement).replace(/\n{3,}/g, '\n\n');
-
-          fs.writeFileSync(path, updated, 'utf8');
-          fs.writeFileSync('RELEASE_NOTES.md', body + '\n', 'utf8');
-          NODE
+          set -euo pipefail
+          printf '%s\n' "$RELEASE_NOTES" > RELEASE_NOTES.md
 
       - name: Commit changelog and version
         run: |
