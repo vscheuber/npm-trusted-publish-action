@@ -7,14 +7,6 @@ on:
         description: 'Release kind: prerelease | patch | minor | major'
         default: 'prerelease'
         required: true
-      llm-provider:
-        description: 'LLM provider'
-        default: 'openai'
-        required: true
-      model:
-        description: 'LLM model'
-        default: 'gpt-4o'
-        required: true
 
 permissions:
   contents: write
@@ -42,8 +34,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           llm-api-key: ${{ secrets.LLM_API_KEY }}
-          llm-provider: ${{ inputs.llm-provider }}
-          model: ${{ inputs.model }}
           target-user-type: developer
           release-type: ${{ steps.version.outputs.action_release_type }}
           version: ${{ steps.version.outputs.newVersion }}
