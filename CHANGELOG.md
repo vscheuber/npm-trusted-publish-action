@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [v1.0.3] - 2026-08-01
+
+### Added
+- Integration of AI action for release notes, streamlining changelog updates and improving release documentation efficiency (commit 5fa6631).
+- Promotion of release notes to versioned changelog section in the release workflow, ensuring accurate historical documentation (commit a302bad).
+
 ## [v1.0.3-1] - 2026-08-01
 
 ### Added
