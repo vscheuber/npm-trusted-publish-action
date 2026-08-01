@@ -6,7 +6,7 @@ Publish npm packages with trusted publishing (OIDC) using release-type aware cha
 
 To use this action in a real publish pipeline, the package must be configured for npm trusted publishing and the workflow must be allowed to mint an OIDC token.
 
-- In GitHub, grant the job `permissions: id-token: write` and `permissions: contents: read`.
+- In GitHub, grant the workflow job shown in the example below `permissions: id-token: write` and `permissions: contents: read`.
 - In npm, enable trusted publishing for the package and register the GitHub repository/workflow that will publish it.
 - The job should run from the repository and workflow name you configured in npm, otherwise npm will reject the publish request.
 - For a normal publish pipeline, use `actions/setup-node` with `registry-url: https://registry.npmjs.org` before running the action.
