@@ -1,7 +1,7 @@
 {
-    "name": "npm-trusted-publish-action",
-    "version": "1.0.1",
-    "private": true,
-    "description": "GitHub Action for npm trusted publishing",
-    "license": "MIT"
+  "name": "npm-trusted-publish-action",
+  "version": "1.0.2-1",
+  "private": true,
+  "description": "GitHub Action for npm trusted publishing",
+  "license": "MIT"
 }
