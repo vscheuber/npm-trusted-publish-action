@@ -40,9 +40,11 @@ if [[ "$dry_run" == "true" ]]; then
   if [[ "$release_type" != "prerelease" && "$add_next_tag_on_stable" == "true" && -n "$package_name" && -n "$version" ]]; then
     echo "[dry-run] npm dist-tag add ${package_name}@${version} next"
   fi
-  echo "published=false" >> "$GITHUB_OUTPUT"
-  echo "tag=$publish_tag" >> "$GITHUB_OUTPUT"
-  echo "is_prerelease=$([[ "$release_type" == "prerelease" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+  {
+    echo "published=false"
+    echo "tag=$publish_tag"
+    echo "is_prerelease=$([[ "$release_type" == "prerelease" ]] && echo true || echo false)"
+  } >> "$GITHUB_OUTPUT"
   exit 0
 fi
 
@@ -54,6 +56,8 @@ if [[ "$release_type" != "prerelease" && "$add_next_tag_on_stable" == "true" && 
   npm dist-tag add "${package_name}@${version}" next
 fi
 
-echo "published=true" >> "$GITHUB_OUTPUT"
-echo "tag=$publish_tag" >> "$GITHUB_OUTPUT"
-echo "is_prerelease=$([[ "$release_type" == "prerelease" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+{
+  echo "published=true"
+  echo "tag=$publish_tag"
+  echo "is_prerelease=$([[ "$release_type" == "prerelease" ]] && echo true || echo false)"
+} >> "$GITHUB_OUTPUT"
