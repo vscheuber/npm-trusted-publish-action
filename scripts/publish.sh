@@ -77,7 +77,7 @@ compute_next_numeric_prerelease() {
   versions_raw="$(npm view "$pkg" versions --json 2>/dev/null || echo '[]')"
   versions_json="$(normalize_json_array "$versions_raw")"
 
-  next_number="$(node -e 'const fs=require("fs"); const stable=process.argv[1]; const versions=JSON.parse(fs.readFileSync(0,"utf8")); const escaped=stable.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); const rx=new RegExp(`^${escaped}-(\\d+)$`); let max=0; for (const v of versions) { const m=String(v).match(rx); if (m) { const n=Number(m[1]); if (Number.isFinite(n) && n>max) max=n; } } process.stdout.write(String(max+1));' "$stable_version" <<<"$versions_json")"
+  next_number="$(node -e 'const fs=require("fs"); const stable=process.argv[1]; const versions=JSON.parse(fs.readFileSync(0,"utf8")); const escaped=stable.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); const rx=new RegExp("^" + escaped + "-(\\\\d+)$"); let max=0; for (const v of versions) { const m=String(v).match(rx); if (m) { const n=Number(m[1]); if (Number.isFinite(n) && n>max) max=n; } } process.stdout.write(String(max+1));' "$stable_version" <<<"$versions_json")"
 
   if [[ ! "$next_number" =~ ^[0-9]+$ ]]; then
     echo "Unable to compute prerelease counter for ${stable_version}; got: ${next_number}"
