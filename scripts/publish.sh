@@ -8,6 +8,7 @@ package_path="${PACKAGE_PATH:-.}"
 access="${ACCESS:-public}"
 tag_override="${TAG_OVERRIDE:-}"
 add_next_tag_on_stable="${ADD_NEXT_TAG_ON_STABLE:-true}"
+dist_tag_token="${DIST_TAG_TOKEN:-}"
 dry_run="${DRY_RUN:-false}"
 already_published='false'
 publish_executed='false'
@@ -116,7 +117,10 @@ if [[ "$needs_next_tag" == "true" ]]; then
   echo "Moving next dist-tag to ${package_name}@${version}"
 
   npm_registry_token=''
-  if [[ -n "${NODE_AUTH_TOKEN:-}" ]]; then
+  if [[ -n "$dist_tag_token" ]]; then
+    echo "Using provided dist-tag-token for npm dist-tag mutation"
+    npm_registry_token="$dist_tag_token"
+  elif [[ -n "${NODE_AUTH_TOKEN:-}" ]]; then
     echo "Using provided NODE_AUTH_TOKEN for npm dist-tag mutation"
     npm_registry_token="${NODE_AUTH_TOKEN}"
   elif [[ -n "${NPM_TOKEN:-}" ]]; then
@@ -138,7 +142,11 @@ if [[ "$needs_next_tag" == "true" ]]; then
     npm_registry_token="$(json_field token "$exchange_response")"
   fi
 
-  NODE_AUTH_TOKEN="$npm_registry_token" npm dist-tag add "${package_name}@${version}" next
+  if ! NODE_AUTH_TOKEN="$npm_registry_token" npm dist-tag add "${package_name}@${version}" next; then
+    echo "Failed to move next dist-tag for ${package_name}@${version}."
+    echo "If this is a 401, configure a granular npm write token and pass dist-tag-token input."
+    exit 1
+  fi
 
   tag_listing="$(NODE_AUTH_TOKEN="$npm_registry_token" npm dist-tag ls "$package_name")"
   if ! grep -Eq "^next:[[:space:]]*${version}$" <<<"$tag_listing"; then

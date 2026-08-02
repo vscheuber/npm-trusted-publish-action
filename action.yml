@@ -35,6 +35,10 @@ inputs:
     description: 'When true and release is stable, move next dist-tag to this version and fail if update or verification fails'
     required: false
     default: 'true'
+  dist-tag-token:
+    description: 'Optional npm token used only for dist-tag mutation (recommended for stable next tag updates)'
+    required: false
+    default: ''
   dry-run:
     description: 'When true, print intended commands without publishing'
     required: false
@@ -67,6 +71,7 @@ runs:
         ACCESS: ${{ inputs.access }}
         TAG_OVERRIDE: ${{ inputs.tag-override }}
         ADD_NEXT_TAG_ON_STABLE: ${{ inputs.add-next-tag-on-stable }}
+        DIST_TAG_TOKEN: ${{ inputs.dist-tag-token }}
         DRY_RUN: ${{ inputs.dry-run }}
       run: |
         bash "${{ github.action_path }}/scripts/publish.sh"
