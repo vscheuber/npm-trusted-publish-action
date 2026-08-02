@@ -7,13 +7,9 @@ version="${VERSION:-}"
 package_path="${PACKAGE_PATH:-.}"
 access="${ACCESS:-public}"
 tag_override="${TAG_OVERRIDE:-}"
-add_next_tag_on_stable="${ADD_NEXT_TAG_ON_STABLE:-true}"
-dist_tag_token="${DIST_TAG_TOKEN:-}"
 dry_run="${DRY_RUN:-false}"
 already_published='false'
 publish_executed='false'
-
-oidc_audience='npm:registry.npmjs.org'
 
 require_cmd() {
   local cmd="$1"
@@ -21,58 +17,6 @@ require_cmd() {
     echo "Required command not found: $cmd"
     exit 1
   fi
-}
-
-json_field() {
-  local field="$1"
-  local payload="$2"
-  node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync(0,'utf8')); const v=d['$field']; if (typeof v !== 'string' || !v) process.exit(2); process.stdout.write(v);" <<<"$payload"
-}
-
-urlencode() {
-  local raw="$1"
-  node -e "process.stdout.write(encodeURIComponent(process.argv[1]));" "$raw"
-}
-
-append_query_param() {
-  local url="$1"
-  local key="$2"
-  local value="$3"
-  if [[ "$url" == *\?* ]]; then
-    echo "${url}&${key}=${value}"
-  else
-    echo "${url}?${key}=${value}"
-  fi
-}
-
-fetch_dist_tags() {
-  local package_name="$1"
-  local auth_token="$2"
-  local encoded_package_name
-  encoded_package_name="$(urlencode "$package_name")"
-
-  curl -fsSL \
-    -H "Authorization: Bearer ${auth_token}" \
-    "https://registry.npmjs.org/-/package/${encoded_package_name}/dist-tags"
-}
-
-put_dist_tag() {
-  local package_name="$1"
-  local tag_name="$2"
-  local tag_version="$3"
-  local auth_token="$4"
-  local encoded_package_name
-  local encoded_tag_name
-
-  encoded_package_name="$(urlencode "$package_name")"
-  encoded_tag_name="$(urlencode "$tag_name")"
-
-  curl -fsSL \
-    -X PUT \
-    -H "Authorization: Bearer ${auth_token}" \
-    -H 'Content-Type: application/json' \
-    --data "\"${tag_version}\"" \
-    "https://registry.npmjs.org/-/package/${encoded_package_name}/dist-tags/${encoded_tag_name}"
 }
 
 case "$release_type" in
@@ -85,7 +29,6 @@ esac
 
 require_cmd npm
 require_cmd node
-require_cmd curl
 
 if [[ -n "$tag_override" ]]; then
   publish_tag="$tag_override"
@@ -104,26 +47,8 @@ fi
 
 echo "Resolved publish tag: $publish_tag"
 
-needs_next_tag='false'
-if [[ "$release_type" != "prerelease" && "$add_next_tag_on_stable" == "true" ]]; then
-  needs_next_tag='true'
-fi
-
-if [[ "$needs_next_tag" == "true" ]]; then
-  if [[ -z "$package_name" || -z "$version" ]]; then
-    echo "package-name and version are required when add-next-tag-on-stable is true for stable releases"
-    exit 1
-  fi
-fi
-
 if [[ "$dry_run" == "true" ]]; then
   echo "[dry-run] npm publish --access $access --tag $publish_tag"
-  if [[ "$needs_next_tag" == "true" ]]; then
-    echo "[dry-run] request GitHub OIDC id_token for audience ${oidc_audience}"
-    echo "[dry-run] exchange OIDC token for npm short-lived token scoped to ${package_name}"
-    echo "[dry-run] npm dist-tag add ${package_name}@${version} next"
-    echo "[dry-run] npm dist-tag ls ${package_name} (verify next -> ${version})"
-  fi
   {
     echo "published=false"
     echo "already_published=false"
@@ -141,73 +66,6 @@ else
   npm publish --access "$access" --tag "$publish_tag"
   popd >/dev/null
   publish_executed='true'
-fi
-
-if [[ "$needs_next_tag" == "true" ]]; then
-  echo "Moving next dist-tag to ${package_name}@${version}"
-
-  npm_registry_token=''
-  token_source=''
-  if [[ -n "$dist_tag_token" ]]; then
-    echo "Using provided dist-tag-token for npm dist-tag mutation"
-    npm_registry_token="$dist_tag_token"
-    token_source='dist-tag-token'
-  elif [[ -n "${NODE_AUTH_TOKEN:-}" ]]; then
-    echo "Using provided NODE_AUTH_TOKEN for npm dist-tag mutation"
-    npm_registry_token="${NODE_AUTH_TOKEN}"
-    token_source='node-auth-token'
-  elif [[ -n "${NPM_TOKEN:-}" ]]; then
-    echo "Using provided NPM_TOKEN for npm dist-tag mutation"
-    npm_registry_token="${NPM_TOKEN}"
-    token_source='npm-token'
-  else
-    if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" || -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]]; then
-      echo "Cannot request GitHub OIDC token. Ensure job permissions include id-token: write."
-      exit 1
-    fi
-
-    oidc_url="$(append_query_param "$ACTIONS_ID_TOKEN_REQUEST_URL" "audience" "$oidc_audience")"
-    oidc_response="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "$oidc_url")"
-    oidc_id_token="$(json_field value "$oidc_response")"
-
-    encoded_package_name="$(urlencode "$package_name")"
-    exchange_url="https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/${encoded_package_name}"
-    exchange_response="$(curl -fsSL -X POST -H "Authorization: Bearer ${oidc_id_token}" "$exchange_url")"
-    npm_registry_token="$(json_field token "$exchange_response")"
-    token_source='oidc-exchange'
-  fi
-
-  if [[ "$token_source" == 'oidc-exchange' ]]; then
-    if ! put_dist_tag "$package_name" next "$version" "$npm_registry_token" >/dev/null; then
-      echo "Failed to move next dist-tag for ${package_name}@${version} using exchanged OIDC registry token."
-      exit 1
-    fi
-  else
-    if ! NODE_AUTH_TOKEN="$npm_registry_token" npm dist-tag add "${package_name}@${version}" next; then
-      echo "Failed to move next dist-tag for ${package_name}@${version}."
-      echo "If this is a 401, configure a granular npm write token and pass dist-tag-token input."
-      exit 1
-    fi
-  fi
-
-  if [[ "$token_source" == 'oidc-exchange' ]]; then
-    tag_listing_json="$(fetch_dist_tags "$package_name" "$npm_registry_token")"
-    resolved_next="$(node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync(0,'utf8')); process.stdout.write(String(d.next || ''));" <<<"$tag_listing_json")"
-    if [[ "$resolved_next" != "$version" ]]; then
-      echo "Failed to verify next dist-tag. Expected next: ${version}."
-      echo "Current dist-tags:"
-      echo "$tag_listing_json"
-      exit 1
-    fi
-  else
-    tag_listing="$(NODE_AUTH_TOKEN="$npm_registry_token" npm dist-tag ls "$package_name")"
-    if ! grep -Eq "^next:[[:space:]]*${version}$" <<<"$tag_listing"; then
-      echo "Failed to verify next dist-tag. Expected next: ${version}."
-      echo "Current dist-tags:"
-      echo "$tag_listing"
-      exit 1
-    fi
-  fi
 fi
 
 {
