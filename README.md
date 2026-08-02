@@ -2,6 +2,8 @@
 
 Publish npm packages with trusted publishing (OIDC) using release-type aware channel selection.
 
+For stable releases (`patch`, `minor`, `major`) with `add-next-tag-on-stable: true` (default), this action treats moving the `next` dist-tag as a required step and fails the job if the mutation or verification fails.
+
 ## Prerequisites
 
 To use this action in a real publish pipeline, the package must be configured for npm trusted publishing and the workflow must be allowed to mint an OIDC token.
@@ -10,18 +12,19 @@ To use this action in a real publish pipeline, the package must be configured fo
 - In npm, enable trusted publishing for the package and register the GitHub repository/workflow that will publish it.
 - The job should run from the repository and workflow name you configured in npm, otherwise npm will reject the publish request.
 - For a normal publish pipeline, use `actions/setup-node` with `registry-url: https://registry.npmjs.org` before running the action.
+- For stable releases with `add-next-tag-on-stable: true`, the action exchanges the GitHub OIDC token for a short-lived npm registry token and uses it to run `npm dist-tag add ... next`.
 
 Public docs: https://docs.npmjs.com/trusted-publishing
 
 ## Inputs
 
 - `release-type`: `prerelease | patch | minor | major` (default: `prerelease`)
-- `package-name`: optional package name for adding `next` tag after stable release
-- `version`: optional version for adding `next` tag after stable release
+- `package-name`: required for stable releases when `add-next-tag-on-stable` is `true`
+- `version`: required for stable releases when `add-next-tag-on-stable` is `true`
 - `package-path`: path containing `package.json` (default: `.`)
 - `access`: `public | restricted` (default: `public`)
 - `tag-override`: optional explicit publish tag
-- `add-next-tag-on-stable`: add `next` dist-tag for stable releases (default: `true`)
+- `add-next-tag-on-stable`: for stable releases, move and verify `next` dist-tag (default: `true`)
 - `dry-run`: print commands without publishing (default: `false`)
 
 ## Outputs
@@ -59,6 +62,6 @@ jobs:
         uses: vscheuber/npm-trusted-publish-action@v1
         with:
           release-type: prerelease
-          package-name: my-scope/my-package
+          package-name: '@my-scope/my-package'
           version: 1.2.3-1
 ```

@@ -12,11 +12,11 @@ inputs:
     required: false
     default: 'prerelease'
   package-name:
-    description: 'Package name for optional dist-tag update'
+    description: 'Package name for mandatory next dist-tag update on stable releases when add-next-tag-on-stable is true'
     required: false
     default: ''
   version:
-    description: 'Version being published (used for optional next tag update)'
+    description: 'Version being published (used for mandatory next dist-tag update on stable releases when add-next-tag-on-stable is true)'
     required: false
     default: ''
   package-path:
@@ -32,7 +32,7 @@ inputs:
     required: false
     default: ''
   add-next-tag-on-stable:
-    description: 'When true and release is stable, also add next dist-tag to this version'
+    description: 'When true and release is stable, move next dist-tag to this version and fail if update or verification fails'
     required: false
     default: 'true'
   dry-run:
