@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [v1.0.5] - 2026-08-02
+
+### Added
+- Enhanced descriptions in `README.md` and `action.yml` to provide clearer guidance on handling stable releases and managing `next` dist-tags. This aims to improve user understanding and ease of use for stable release processes. (commit e74289a)
+
+### Changed
+- Updated `publish.sh` script to better handle `next` dist-tag management, ensuring smoother transitions and more reliable publishing workflows for users. (commit e74289a)
+
 ## [v1.0.4] - 2026-08-02
 
 ### Changed
