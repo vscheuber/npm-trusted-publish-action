@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [v1.0.7] - 2026-08-02
+
+### Added
+- Introduced `dist-tag-token` input to support npm granular write token usage, allowing for more precise control over npm dist-tag mutations. This enhancement is reflected in `action.yml` and `publish.sh` and documented in the README. (6f03461, 03a0099)
+
+### Fixed
+- Enabled `fetch-tags` in the checkout step to ensure accurate versioning during the publishing process. This fix addresses potential issues with version retrieval and ensures consistency. (cbfca41)
+
 ## [v1.0.6] - 2026-08-02
 
 ### Added
