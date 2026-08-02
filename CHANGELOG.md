@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [v1.0.6] - 2026-08-02
+
+### Added
+- Introduced a recovery mode for already published packages, enhancing the robustness of the publishing process. This feature helps manage scenarios where a package has been previously published, reducing potential disruptions. Updates have been made to `action.yml` and `publish.sh` to support this functionality. (commit eda5349)
+
+### Changed
+- Updated outputs in `action.yml` and `publish.sh` to reflect the new recovery mode capabilities, ensuring users receive accurate feedback during the publishing process. (commit eda5349)
+
 ## [v1.0.5] - 2026-08-02
 
 ### Added
