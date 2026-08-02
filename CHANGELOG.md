@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [v1.1.0] - 2026-08-02
+
+### Added
+- Introduced dual release support, enabling stable versions to be released alongside companion pre-releases. This feature allows for more flexible release management and testing workflows. (39580b9)
+
 ## [v1.0.9] - 2026-08-02
 
 ### Changed
