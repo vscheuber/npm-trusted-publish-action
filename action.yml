@@ -44,6 +44,9 @@ outputs:
   published:
     description: 'Whether publish was executed'
     value: ${{ steps.publish.outputs.published }}
+  already_published:
+    description: 'Whether the requested package@version was already present on npm and publish was skipped'
+    value: ${{ steps.publish.outputs.already_published }}
   tag:
     description: 'Resolved npm publish tag'
     value: ${{ steps.publish.outputs.tag }}

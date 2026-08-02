@@ -9,6 +9,8 @@ access="${ACCESS:-public}"
 tag_override="${TAG_OVERRIDE:-}"
 add_next_tag_on_stable="${ADD_NEXT_TAG_ON_STABLE:-true}"
 dry_run="${DRY_RUN:-false}"
+already_published='false'
+publish_executed='false'
 
 oidc_audience='npm:registry.npmjs.org'
 
@@ -93,15 +95,22 @@ if [[ "$dry_run" == "true" ]]; then
   fi
   {
     echo "published=false"
+    echo "already_published=false"
     echo "tag=$publish_tag"
     echo "is_prerelease=$([[ "$release_type" == "prerelease" ]] && echo true || echo false)"
   } >> "$GITHUB_OUTPUT"
   exit 0
 fi
 
-pushd "$package_path" >/dev/null
-npm publish --access "$access" --tag "$publish_tag"
-popd >/dev/null
+if [[ -n "$package_name" && -n "$version" ]] && npm view "${package_name}@${version}" version --json >/dev/null 2>&1; then
+  already_published='true'
+  echo "${package_name}@${version} is already published; skipping npm publish and continuing recovery flow"
+else
+  pushd "$package_path" >/dev/null
+  npm publish --access "$access" --tag "$publish_tag"
+  popd >/dev/null
+  publish_executed='true'
+fi
 
 if [[ "$needs_next_tag" == "true" ]]; then
   echo "Moving next dist-tag to ${package_name}@${version}"
@@ -141,7 +150,8 @@ if [[ "$needs_next_tag" == "true" ]]; then
 fi
 
 {
-  echo "published=true"
+  echo "published=$publish_executed"
+  echo "already_published=$already_published"
   echo "tag=$publish_tag"
   echo "is_prerelease=$([[ "$release_type" == "prerelease" ]] && echo true || echo false)"
 } >> "$GITHUB_OUTPUT"

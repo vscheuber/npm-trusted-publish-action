@@ -4,6 +4,8 @@ Publish npm packages with trusted publishing (OIDC) using release-type aware cha
 
 For stable releases (`patch`, `minor`, `major`) with `add-next-tag-on-stable: true` (default), this action treats moving the `next` dist-tag as a required step and fails the job if the mutation or verification fails.
 
+If `package-name` and `version` are provided and that exact version is already on npm, the action enters recovery mode: it skips `npm publish`, continues with required stable `next` dist-tag mutation/verification, and exits successfully when reconciliation succeeds.
+
 ## Prerequisites
 
 To use this action in a real publish pipeline, the package must be configured for npm trusted publishing and the workflow must be allowed to mint an OIDC token.
@@ -29,7 +31,8 @@ Public docs: https://docs.npmjs.com/trusted-publishing
 
 ## Outputs
 
-- `published`: `true` when `npm publish` was executed
+- `published`: `true` when `npm publish` was executed in this run
+- `already-published`: `true` when `package-name@version` already existed and publish was skipped
 - `tag`: resolved publish tag
 - `is-prerelease`: whether the release type was prerelease
 
