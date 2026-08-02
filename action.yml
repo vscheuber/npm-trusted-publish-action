@@ -31,6 +31,14 @@ inputs:
     description: 'Override npm publish tag (e.g. next, latest)'
     required: false
     default: ''
+  dual-release-on-stable:
+    description: 'When true and release is stable, publish x.y.z-n to next before publishing x.y.z to latest'
+    required: false
+    default: 'false'
+  companion-prerelease-version:
+    description: 'Optional explicit companion prerelease version in x.y.z-n format; only used when dual-release-on-stable is true'
+    required: false
+    default: ''
   dry-run:
     description: 'When true, print intended commands without publishing'
     required: false
@@ -49,6 +57,21 @@ outputs:
   is-prerelease:
     description: 'Whether release-type resolved to prerelease'
     value: ${{ steps.publish.outputs.is_prerelease }}
+  stable_published:
+    description: 'Whether stable publish (x.y.z) was executed in this run'
+    value: ${{ steps.publish.outputs.stable_published }}
+  stable_already_published:
+    description: 'Whether stable x.y.z was already present and skipped'
+    value: ${{ steps.publish.outputs.stable_already_published }}
+  companion_prerelease_published:
+    description: 'Whether companion prerelease publish (x.y.z-n) was executed in this run'
+    value: ${{ steps.publish.outputs.companion_prerelease_published }}
+  companion_prerelease_already_published:
+    description: 'Whether companion prerelease x.y.z-n was already present and skipped'
+    value: ${{ steps.publish.outputs.companion_prerelease_already_published }}
+  companion_prerelease_version:
+    description: 'Resolved companion prerelease version (x.y.z-n) when dual-release-on-stable is enabled'
+    value: ${{ steps.publish.outputs.companion_prerelease_version }}
 
 runs:
   using: 'composite'
@@ -62,6 +85,8 @@ runs:
         PACKAGE_PATH: ${{ inputs.package-path }}
         ACCESS: ${{ inputs.access }}
         TAG_OVERRIDE: ${{ inputs.tag-override }}
+        DUAL_RELEASE_ON_STABLE: ${{ inputs.dual-release-on-stable }}
+        COMPANION_PRERELEASE_VERSION: ${{ inputs.companion-prerelease-version }}
         DRY_RUN: ${{ inputs.dry-run }}
       run: |
         bash "${{ github.action_path }}/scripts/publish.sh"
