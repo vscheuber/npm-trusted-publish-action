@@ -66,6 +66,10 @@ set_package_version() {
   node -e "const fs=require('fs'); const p=process.argv[1]; const v=process.argv[2]; const data=JSON.parse(fs.readFileSync(p,'utf8')); data.version=v; fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\\n');" "$pkg_json" "$target_version"
 }
 
+get_package_version() {
+  node -e "const fs=require('fs'); const p=process.argv[1]; const d=JSON.parse(fs.readFileSync(p,'utf8')); process.stdout.write(String(d.version || ''));" "${package_path}/package.json"
+}
+
 compute_next_numeric_prerelease() {
   local pkg="$1"
   local stable_version="$2"
@@ -212,17 +216,24 @@ if [[ "$dual_release_on_stable" == 'true' && "$is_stable_release" == 'true' ]]; 
 
   echo "Dual stable release companion prerelease: ${companion_prerelease_version}"
 
-  current_version="$(node -e "const fs=require('fs'); const p=process.argv[1]; const d=JSON.parse(fs.readFileSync(p,'utf8')); process.stdout.write(String(d.version || ''));" "${package_path}/package.json")"
-  restore_version="$current_version"
+  current_version="$(get_package_version)"
 
   if [[ "$current_version" != "$companion_prerelease_version" ]]; then
     set_package_version "$companion_prerelease_version"
   fi
   publish_if_missing "$package_name" "$companion_prerelease_version" next companion_prerelease_published companion_prerelease_already_published
 
-  if [[ "$restore_version" != "$version" ]]; then
+  stable_candidate_version="$(get_package_version)"
+  if [[ "$stable_candidate_version" != "$version" ]]; then
     set_package_version "$version"
   fi
+
+  stable_candidate_version="$(get_package_version)"
+  if [[ "$stable_candidate_version" != "$version" ]]; then
+    echo "Failed to prepare stable publish version. Expected ${version}, found ${stable_candidate_version}"
+    exit 1
+  fi
+
   publish_if_missing "$package_name" "$version" "$publish_tag" stable_published stable_already_published
 
   already_published="$stable_already_published"
