@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [v1.1.1] - 2026-08-02
+
+### Fixed
+- Corrected regex escaping in prerelease version computation to ensure accurate version parsing. This fix addresses potential issues with version matching and improves overall reliability. (commit c1b641f)
+- Enhanced error handling and validation in prerelease version computation, reducing the likelihood of errors during the release process. This update improves stability and user confidence in version management. (commit 4ab25ba)
+
 ## [v1.1.0] - 2026-08-02
 
 ### Added
