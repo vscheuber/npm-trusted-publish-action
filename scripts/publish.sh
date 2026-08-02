@@ -77,7 +77,12 @@ compute_next_numeric_prerelease() {
   versions_raw="$(npm view "$pkg" versions --json 2>/dev/null || echo '[]')"
   versions_json="$(normalize_json_array "$versions_raw")"
 
-  next_number="$(node -e "const fs=require('fs'); const stable=process.argv[1]; const versions=JSON.parse(fs.readFileSync(0,'utf8')); const rx=new RegExp('^'+stable.replace(/[.*+?^${}()|[\\]\\]/g,'\\\\$&')+'-(\\\\d+)$'); let max=0; for (const v of versions) { const m=String(v).match(rx); if (m) { const n=Number(m[1]); if (Number.isFinite(n) && n>max) max=n; } } process.stdout.write(String(max+1));" "$stable_version" <<<"$versions_json")"
+  next_number="$(node -e 'const fs=require("fs"); const stable=process.argv[1]; const versions=JSON.parse(fs.readFileSync(0,"utf8")); const escaped=stable.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); const rx=new RegExp(`^${escaped}-(\\d+)$`); let max=0; for (const v of versions) { const m=String(v).match(rx); if (m) { const n=Number(m[1]); if (Number.isFinite(n) && n>max) max=n; } } process.stdout.write(String(max+1));' "$stable_version" <<<"$versions_json")"
+
+  if [[ ! "$next_number" =~ ^[0-9]+$ ]]; then
+    echo "Unable to compute prerelease counter for ${stable_version}; got: ${next_number}"
+    exit 1
+  fi
 
   echo "${stable_version}-${next_number}"
 }
@@ -183,6 +188,11 @@ if [[ "$dual_release_on_stable" == 'true' && "$is_stable_release" == 'true' ]]; 
     fi
   else
     companion_prerelease_version="$(compute_next_numeric_prerelease "$package_name" "$version")"
+  fi
+
+  if [[ ! "$companion_prerelease_version" =~ $semver_numeric_prerelease_re ]]; then
+    echo "Resolved companion prerelease version is invalid, expected x.y.z-n. Got: ${companion_prerelease_version}"
+    exit 1
   fi
 
   echo "Dual stable release companion prerelease: ${companion_prerelease_version}"
