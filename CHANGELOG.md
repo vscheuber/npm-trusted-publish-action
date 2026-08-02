@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [v1.1.2] - 2026-08-02
+
+### Added
+- Introduced `get_package_version` function to enhance version retrieval capabilities, providing a more reliable and streamlined method for accessing package versions. This addition aims to improve the efficiency of version management processes. (commit 32106f2)
+
 ## [v1.1.1] - 2026-08-02
 
 ### Fixed
