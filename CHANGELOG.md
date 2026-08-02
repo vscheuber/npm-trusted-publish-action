@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [v1.0.8] - 2026-08-02
+
+### Added
+- Implemented `fetch_dist_tags` and `put_dist_tag` functions to enhance npm dist-tag management. These functions allow for more efficient handling of dist-tags during the publishing process, improving overall control and automation. (commit 65d8940)
+
 ## [v1.0.7] - 2026-08-02
 
 ### Added
