@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [v1.0.9] - 2026-08-02
+
+### Changed
+- Updated input descriptions in `action.yml` to clarify usage and remove unused parameters, streamlining the configuration process for users. (commit 8026157)
+
+### Removed
+- Eliminated redundant code from `publish.sh`, reducing complexity and potential maintenance overhead. (commit 8026157)
+
 ## [v1.0.8] - 2026-08-02
 
 ### Added
