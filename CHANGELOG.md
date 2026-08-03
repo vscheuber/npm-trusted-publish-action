@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [v1.1.3] - 2026-08-03
+
+### Added
+- Implemented CI and release workflows, including unit tests and publish script validation, to ensure consistent and reliable releases. This enhancement provides automated testing and validation processes, improving the overall quality and reliability of the publishing workflow. (commit 787f2a6)
+
 ## [v1.1.2] - 2026-08-02
 
 ### Added
