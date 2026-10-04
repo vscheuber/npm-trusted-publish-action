@@ -24,7 +24,7 @@ Public docs: https://docs.npmjs.com/trusted-publishing
 
 ## Inputs
 
-- `release-type`: `prerelease | patch | minor | major` (default: `prerelease`)
+- `release-type`: `prerelease | premajor | patch | minor | major` (default: `prerelease`); `premajor` (a prerelease of the next major, e.g. `5.0.0-1`) is treated exactly like `prerelease` and publishes to `next`
 - `package-name`: optional; used for already-published detection when `version` is also provided
 - `version`: optional; used with `package-name` for already-published detection
 - `package-path`: path containing `package.json` (default: `.`)
@@ -39,7 +39,7 @@ Public docs: https://docs.npmjs.com/trusted-publishing
 - `published`: `true` when `npm publish` was executed in this run
 - `already-published`: `true` when `package-name@version` already existed and publish was skipped
 - `tag`: resolved publish tag
-- `is-prerelease`: whether the release type was prerelease
+- `is-prerelease`: whether the release type was prerelease or premajor
 - `stable_published`: whether stable `x.y.z` publish was executed in this run
 - `stable_already_published`: whether stable `x.y.z` already existed and was skipped
 - `companion_prerelease_published`: whether companion prerelease `x.y.z-n` publish was executed in this run

@@ -8,7 +8,7 @@ branding:
 
 inputs:
   release-type:
-    description: 'prerelease | patch | minor | major'
+    description: 'prerelease | premajor | patch | minor | major (premajor is treated like prerelease and publishes to next)'
     required: false
     default: 'prerelease'
   package-name:

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [v1.1.4] - 2026-10-03
+
+### Added
+- Added `premajor` release type support, treated exactly like `prerelease`: it publishes to the `next` tag, reports `is-prerelease=true`, and skips dual companion release logic. This aligns the action with version-bump pipelines that emit `premajor` for prereleases of the next major version (e.g. `5.0.0-1`). Reflected in `scripts/publish.sh`, `action.yml`, the release workflow input options, and `README.md`.
+
 ## [v1.1.3] - 2026-08-03
 
 ### Added
