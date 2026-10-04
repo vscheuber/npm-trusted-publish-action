@@ -27,11 +27,16 @@ require_cmd() {
 }
 
 case "$release_type" in
-  prerelease|patch|minor|major) ;;
+  prerelease|premajor|patch|minor|major) ;;
   *)
-    echo "release-type must be one of: prerelease, patch, minor, major"
+    echo "release-type must be one of: prerelease, premajor, patch, minor, major"
     exit 1
     ;;
+esac
+
+is_prerelease_type='false'
+case "$release_type" in
+  prerelease|premajor) is_prerelease_type='true' ;;
 esac
 
 case "$dual_release_on_stable" in
@@ -130,7 +135,7 @@ publish_if_missing() {
 if [[ -n "$tag_override" ]]; then
   publish_tag="$tag_override"
 else
-  if [[ "$release_type" == "prerelease" ]]; then
+  if [[ "$is_prerelease_type" == 'true' ]]; then
     publish_tag='next'
   else
     publish_tag='latest'
@@ -145,7 +150,7 @@ fi
 echo "Resolved publish tag: $publish_tag"
 
 is_stable_release='false'
-if [[ "$release_type" != "prerelease" ]]; then
+if [[ "$is_prerelease_type" == 'false' ]]; then
   is_stable_release='true'
 fi
 
@@ -182,7 +187,7 @@ if [[ "$dry_run" == "true" ]]; then
     echo "published=false"
     echo "already_published=false"
     echo "tag=$publish_tag"
-    echo "is_prerelease=$([[ "$release_type" == "prerelease" ]] && echo true || echo false)"
+    echo "is_prerelease=$is_prerelease_type"
     echo "stable_published=false"
     echo "stable_already_published=false"
     echo "companion_prerelease_published=false"
@@ -254,7 +259,7 @@ fi
   echo "published=$publish_executed"
   echo "already_published=$already_published"
   echo "tag=$publish_tag"
-  echo "is_prerelease=$([[ "$release_type" == "prerelease" ]] && echo true || echo false)"
+  echo "is_prerelease=$is_prerelease_type"
   echo "stable_published=$stable_published"
   echo "stable_already_published=$stable_already_published"
   echo "companion_prerelease_published=$companion_prerelease_published"

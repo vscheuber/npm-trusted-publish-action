@@ -68,18 +68,72 @@ assert_contains() {
   fi
 }
 
-PATH="$mock_bin:$PATH" \
-RELEASE_TYPE='patch' \
-PACKAGE_NAME='npm-trusted-publish-action' \
-VERSION='1.2.3' \
-PACKAGE_PATH="$repo" \
-DRY_RUN='true' \
-GITHUB_OUTPUT="$output_file" \
-bash "$SCRIPT_PATH"
+assert_not_contains() {
+  local file="$1"
+  local line="$2"
+  if grep -q "^${line}$" "$file"; then
+    echo "Unexpected line found: $line"
+    cat "$file"
+    exit 1
+  fi
+}
+
+run_publish_dry_run() {
+  local release_type="$1"
+  : > "$output_file"
+  PATH="$mock_bin:$PATH" \
+    RELEASE_TYPE="$release_type" \
+    PACKAGE_NAME='npm-trusted-publish-action' \
+    VERSION='1.2.3' \
+    PACKAGE_PATH="$repo" \
+    DRY_RUN='true' \
+    GITHUB_OUTPUT="$output_file" \
+    bash "$SCRIPT_PATH"
+}
+
+run_publish_dry_run 'patch'
 
 assert_contains "$output_file" 'published=false'
 assert_contains "$output_file" 'already_published=false'
 assert_contains "$output_file" 'tag=latest'
 assert_contains "$output_file" 'is_prerelease=false'
+
+# premajor is treated exactly like prerelease: publishes to next, is_prerelease=true,
+# and no stable/dual-release branch is taken.
+run_publish_dry_run 'premajor'
+
+assert_contains "$output_file" 'published=false'
+assert_contains "$output_file" 'already_published=false'
+assert_contains "$output_file" 'tag=next'
+assert_contains "$output_file" 'is_prerelease=true'
+assert_not_contains "$output_file" 'companion_prerelease_published=true'
+assert_not_contains "$output_file" 'companion_prerelease_version=1.2.3-'
+
+run_publish_dry_run 'prerelease'
+
+assert_contains "$output_file" 'tag=next'
+assert_contains "$output_file" 'is_prerelease=true'
+
+# Invalid release types are rejected; the error message lists premajor.
+set +e
+PATH="$mock_bin:$PATH" \
+  RELEASE_TYPE='bogus' \
+  PACKAGE_PATH="$repo" \
+  GITHUB_OUTPUT="$output_file" \
+  bash "$SCRIPT_PATH" > "$workspace/error.txt" 2>&1
+status=$?
+set -e
+
+if [[ "$status" -ne 1 ]]; then
+  echo "Expected exit status 1 for invalid release type, got: $status"
+  cat "$workspace/error.txt"
+  exit 1
+fi
+
+if ! grep -q 'release-type must be one of: prerelease, premajor, patch, minor, major' "$workspace/error.txt"; then
+  echo "Expected validation error to list premajor"
+  cat "$workspace/error.txt"
+  exit 1
+fi
 
 echo "All publish tests passed"
