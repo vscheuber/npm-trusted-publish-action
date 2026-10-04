@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [v1.1.4] - 2026-10-04
+
+### Added
+- Added support for the `premajor` release type, allowing it to publish to the `next` tag. This release type is treated like `prerelease`, reporting `is-prerelease=true` and bypassing the stable dual companion release path. This enhancement ensures compatibility with pipelines using `version-bump-action` when it introduces a `premajor` type. (#1)
+
 ## [v1.1.4] - 2026-10-03
 
 ### Added
@@ -97,3 +102,4 @@
 - Updated README with improved clarity in the prerequisites section and detailed permissions requirements.
 - Added example workflow for npm trusted publishing in the README.
 
+[v1.1.4]: https://github.com/vscheuber/npm-trusted-publish-action/compare/v1...v1.1.4
